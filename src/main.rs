@@ -25,7 +25,12 @@ impl Job for CustomMoveJob {
 
     fn process(&mut self, message: &Self::ItemMessage) {
         self.total_moves += (message.delta_x.abs() + message.delta_y.abs()) as u64;
-        println!("Total moves: {}", self.total_moves);
+    }
+}
+
+impl Drop for CustomMoveJob {
+    fn drop(&mut self) {
+        // println!("Total moves: {}", self.total_moves);
     }
 }
 
@@ -36,6 +41,9 @@ async fn main() {
     subscriber.add_uninit_handler::<MoveJob>();
     let custom_handler = subscriber.add_uninit_handler::<CustomMoveJob>();
     subscriber.add_uninit_handler::<HitJob>();
+    for _ in 0..1_000_000 {
+        subscriber.add_uninit_handler::<CustomMoveJob>();
+    }
 
     subscriber.run(MoveMessage {
         delta_x: 10,
@@ -49,11 +57,8 @@ async fn main() {
         distance: 10,
     });
 
-    for i in 0..8 {
-        for j in 0..8 {
-            if i * 8 + j == 32 {
-                subscriber.remove_handler(custom_handler);
-            }
+    for i in 0..16 {
+        for j in 0..16 {
             subscriber.run(MoveMessage {
                 delta_x: i,
                 delta_y: j,
@@ -61,5 +66,5 @@ async fn main() {
         }
     }
 
-    println!("elapsed: {:?}", n.elapsed().as_micros());
+    println!("elapsed: {:?}", n.elapsed().as_millis());
 }
