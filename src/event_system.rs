@@ -19,7 +19,6 @@ impl Subscriber {
     pub fn new() -> Self {
         Subscriber {
             handlers: Vec::new(),
-            phantom: std::marker::PhantomData,
         }
     }
 
