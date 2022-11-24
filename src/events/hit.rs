@@ -1,4 +1,4 @@
-use crate::event_system::{Job, Message};
+use crate::event_system::{Job, JobInit, Message};
 
 #[derive(Debug)]
 pub enum Weapon {
@@ -15,15 +15,16 @@ pub struct HitMessage {
 }
 impl Message for HitMessage {}
 pub struct HitJob;
-impl Job for HitJob {
-    type ItemMessage = HitMessage;
-
+impl JobInit for HitJob {
     fn init() -> Self
     where
         Self: Sized,
     {
-        HitJob {}
+        Self
     }
+}
+impl Job for HitJob {
+    type ItemMessage = HitMessage;
 
     fn process(&mut self, message: &Self::ItemMessage) {
         println!(
