@@ -42,6 +42,9 @@ async fn main() {
 
     let job = CustomMoveJob { total_moves: 100 };
     let custom_handler = subscriber.add_handler(job);
+    for _ in 0..10_000 {
+        subscriber.add_uninit_handler::<CustomMoveJob>();
+    }
 
     subscriber.run(MoveMessage {
         delta_x: 10,
