@@ -34,7 +34,7 @@ async fn main() {
     let n = Instant::now();
     let mut subscriber = Subscriber::new();
     subscriber.add_uninit_handler::<MoveJob>();
-    subscriber.add_uninit_handler::<CustomMoveJob>();
+    let custom_handler = subscriber.add_uninit_handler::<CustomMoveJob>();
     subscriber.add_uninit_handler::<HitJob>();
 
     subscriber.run(MoveMessage {
@@ -51,6 +51,9 @@ async fn main() {
 
     for i in 0..8 {
         for j in 0..8 {
+            if i * 8 + j == 32 {
+                subscriber.remove_handler(custom_handler);
+            }
             subscriber.run(MoveMessage {
                 delta_x: i,
                 delta_y: j,
