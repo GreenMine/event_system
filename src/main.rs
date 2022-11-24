@@ -1,3 +1,5 @@
+#![feature(box_syntax)]
+
 mod event_system;
 mod events;
 
@@ -8,7 +10,9 @@ use crate::events::{
 };
 use std::{fmt::Debug, time::Instant};
 
-pub struct CustomMoveJob;
+pub struct CustomMoveJob {
+    total_moves: u64,
+}
 impl Job for CustomMoveJob {
     type ItemMessage = MoveMessage;
 
@@ -16,11 +20,12 @@ impl Job for CustomMoveJob {
     where
         Self: Sized,
     {
-        todo!()
+        CustomMoveJob { total_moves: 0 }
     }
 
-    fn process(message: &Self::ItemMessage) {
-        println!("custom move");
+    fn process(&mut self, message: &Self::ItemMessage) {
+        self.total_moves += (message.delta_x.abs() + message.delta_y.abs()) as u64;
+        println!("Total moves: {}", self.total_moves);
     }
 }
 
@@ -28,9 +33,9 @@ impl Job for CustomMoveJob {
 async fn main() {
     let n = Instant::now();
     let mut subscriber = Subscriber::new();
-    subscriber.add_handler::<MoveJob>();
-    subscriber.add_handler::<CustomMoveJob>();
-    subscriber.add_handler::<HitJob>();
+    subscriber.add_uninit_handler::<MoveJob>();
+    subscriber.add_uninit_handler::<CustomMoveJob>();
+    subscriber.add_uninit_handler::<HitJob>();
 
     subscriber.run(MoveMessage {
         delta_x: 10,

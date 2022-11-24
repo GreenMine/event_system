@@ -25,7 +25,7 @@ impl Job for HitJob {
         HitJob {}
     }
 
-    fn process(message: &Self::ItemMessage) {
+    fn process(&mut self, message: &Self::ItemMessage) {
         println!(
             "Registered new hit: player #{} -> player #{}",
             message.player_id, message.enemy_id

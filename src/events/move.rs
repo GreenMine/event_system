@@ -16,7 +16,7 @@ impl Job for MoveJob {
         MoveJob {}
     }
 
-    fn process(message: &Self::ItemMessage) {
+    fn process(&mut self, message: &Self::ItemMessage) {
         println!("Moving by delta [{}, {}]", message.delta_x, message.delta_y);
     }
 }
