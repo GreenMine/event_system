@@ -1,4 +1,4 @@
-use crate::event_system::{Job, Message};
+use crate::event_system::{Job, JobInit, Message};
 
 pub struct MoveMessage {
     pub(crate) delta_x: i32,
@@ -6,15 +6,16 @@ pub struct MoveMessage {
 }
 impl Message for MoveMessage {}
 pub struct MoveJob;
-impl Job for MoveJob {
-    type ItemMessage = MoveMessage;
-
+impl JobInit for MoveJob {
     fn init() -> Self
     where
         Self: Sized,
     {
-        MoveJob {}
+        Self
     }
+}
+impl Job for MoveJob {
+    type ItemMessage = MoveMessage;
 
     fn process(&mut self, message: &Self::ItemMessage) {
         println!("Moving by delta [{}, {}]", message.delta_x, message.delta_y);
