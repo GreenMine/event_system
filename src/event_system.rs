@@ -10,11 +10,11 @@ pub trait Job {
 }
 
 type Handler = dyn Fn(&dyn Message) -> ();
-pub struct Subscriber {
-    handlers: Vec<(&'static str, Box<Handler>)>,
+pub struct Subscriber<'a> {
+    handlers: Vec<(&'static str, &'a Handler)>,
 }
 
-impl Subscriber {
+impl<'a> Subscriber<'a> {
     pub fn new() -> Self {
         Subscriber {
             handlers: Vec::new(),
@@ -27,17 +27,14 @@ impl Subscriber {
         <J as Job>::ItemMessage: Message,
     {
         let message_name = std::any::type_name::<J::ItemMessage>();
-        self.handlers.push((
-            message_name,
-            Box::new(move |message| {
-                let actual_ref = unsafe {
-                    (message as *const dyn Message as *const J::ItemMessage)
-                        .as_ref()
-                        .unwrap()
-                };
-                J::process(actual_ref)
-            }),
-        ))
+        self.handlers.push((message_name, &move |message| {
+            let actual_ref = unsafe {
+                (message as *const dyn Message as *const J::ItemMessage)
+                    .as_ref()
+                    .unwrap()
+            };
+            J::process(actual_ref)
+        }))
     }
 
     pub fn run<M>(&mut self, message: M)
