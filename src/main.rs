@@ -1,17 +1,17 @@
 mod event_system;
 mod events;
 
-use crate::event_system::{Job, JobInit, Subscriber};
+use crate::event_system::{Handler, HandlerInit, Subscriber};
 use crate::events::{
-    hit::{HitJob, HitMessage, Weapon},
-    r#move::{MoveJob, MoveMessage},
+    hit::{HitEvent, HitHandler, Weapon},
+    r#move::{MoveEvent, MoveHandler},
 };
 use std::{fmt::Debug, time::Instant};
 
-pub struct CustomMoveJob {
+pub struct CustomMoveHandler {
     total_moves: u64,
 }
-impl JobInit for CustomMoveJob {
+impl HandlerInit for CustomMoveHandler {
     fn init() -> Self
     where
         Self: Sized,
@@ -19,10 +19,10 @@ impl JobInit for CustomMoveJob {
         Self { total_moves: 0 }
     }
 }
-impl Job for CustomMoveJob {
-    type ItemMessage = MoveMessage;
+impl Handler for CustomMoveHandler {
+    type Event = MoveEvent;
 
-    fn process(&mut self, message: &Self::ItemMessage) {
+    fn process(&mut self, message: &Self::Event) {
         self.total_moves += (message.delta_x.abs() + message.delta_y.abs()) as u64;
     }
 }
@@ -30,18 +30,18 @@ impl Job for CustomMoveJob {
 fn main() {
     let n = Instant::now();
     let mut subscriber = Subscriber::new();
-    subscriber.add_uninit_handler::<MoveJob>();
-    subscriber.add_uninit_handler::<HitJob>();
+    subscriber.add_uninit_handler::<MoveHandler>();
+    subscriber.add_uninit_handler::<HitHandler>();
 
-    let job = CustomMoveJob { total_moves: 100 };
+    let job = CustomMoveHandler { total_moves: 100 };
     subscriber.add_handler(job);
 
-    subscriber.run(MoveMessage {
+    subscriber.run(MoveEvent {
         delta_x: 10,
         delta_y: 1,
     });
 
-    subscriber.run(HitMessage {
+    subscriber.run(HitEvent {
         player_id: 1,
         enemy_id: 2,
         weapon: Weapon::Knife,
@@ -50,14 +50,14 @@ fn main() {
 
     for i in 0..16 {
         for j in 0..16 {
-            subscriber.run(MoveMessage {
+            subscriber.run(MoveEvent {
                 delta_x: i,
                 delta_y: j,
             });
         }
     }
 
-    subscriber.run(HitMessage {
+    subscriber.run(HitEvent {
         player_id: 1,
         enemy_id: 2,
         weapon: Weapon::Knife,

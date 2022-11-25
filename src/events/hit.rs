@@ -1,4 +1,4 @@
-use crate::event_system::{Job, JobInit, Message};
+use crate::event_system::{Event, Handler, HandlerInit};
 
 #[derive(Debug)]
 pub enum Weapon {
@@ -7,15 +7,15 @@ pub enum Weapon {
     Handgun,
     Bomb,
 }
-pub struct HitMessage {
+pub struct HitEvent {
     pub player_id: u64,
     pub enemy_id: u64,
     pub weapon: Weapon,
     pub distance: i32,
 }
-impl Message for HitMessage {}
-pub struct HitJob;
-impl JobInit for HitJob {
+impl Event for HitEvent {}
+pub struct HitHandler;
+impl HandlerInit for HitHandler {
     fn init() -> Self
     where
         Self: Sized,
@@ -23,10 +23,10 @@ impl JobInit for HitJob {
         Self
     }
 }
-impl Job for HitJob {
-    type ItemMessage = HitMessage;
+impl Handler for HitHandler {
+    type Event = HitEvent;
 
-    fn process(&mut self, message: &Self::ItemMessage) {
+    fn process(&mut self, message: &Self::Event) {
         println!(
             "Registered new hit: player #{} -> player #{}",
             message.player_id, message.enemy_id

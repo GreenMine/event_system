@@ -1,27 +1,27 @@
 use std::collections::HashMap;
 
-pub trait Message {}
+pub trait Event {}
 
-impl Message for () {}
+impl Event for () {}
 
-pub trait Job {
-    type ItemMessage: Message;
+pub trait Handler {
+    type Event: Event;
 
-    fn process(&mut self, message: &Self::ItemMessage);
+    fn process(&mut self, message: &Self::Event);
 }
 
-pub trait JobInit: Job {
+pub trait HandlerInit: Handler {
     fn init() -> Self
     where
         Self: Sized;
 }
 
-type Handler = Box<dyn Job<ItemMessage = ()>>;
+type HandlerContainer = Box<dyn Handler<Event = ()>>;
 //FIXME: index will be reordered after delete
 type HandlerId = usize;
 
 pub struct Subscriber {
-    handlers: HashMap<&'static str, Vec<Handler>>,
+    handlers: HashMap<&'static str, Vec<HandlerContainer>>,
 }
 
 impl Subscriber {
@@ -32,30 +32,30 @@ impl Subscriber {
     }
 
     //unsafe wrapped by trait bound
-    pub fn add_uninit_handler<J: Job>(&mut self) -> HandlerId
+    pub fn add_uninit_handler<J: Handler>(&mut self) -> HandlerId
     where
-        J: Job + JobInit,
-        <J as Job>::ItemMessage: Message,
+        J: Handler + HandlerInit,
+        <J as Handler>::Event: Event,
     {
         unsafe { self.push_handler(J::init()) }
     }
 
     //unsafe wrapped by trait bound
-    pub fn add_handler<J: Job>(&mut self, handler: J) -> HandlerId
+    pub fn add_handler<J: Handler>(&mut self, handler: J) -> HandlerId
     where
-        J: Job,
-        <J as Job>::ItemMessage: Message,
+        J: Handler,
+        <J as Handler>::Event: Event,
     {
         unsafe { self.push_handler(handler) }
     }
 
-    pub fn remove_handler(&mut self, _handler_id: HandlerId) -> Option<Handler> {
+    pub fn remove_handler(&mut self, _handler_id: HandlerId) -> Option<HandlerContainer> {
         None
         // Some(self.handlers.remove(handler_id).1)
     }
 
-    unsafe fn push_handler<J: Job>(&mut self, handler: J) -> HandlerId {
-        let message_name = std::any::type_name::<J::ItemMessage>();
+    unsafe fn push_handler<J: Handler>(&mut self, handler: J) -> HandlerId {
+        let message_name = std::any::type_name::<J::Event>();
         let handle = Self::cast_handler(handler);
         self.handlers
             .entry(message_name)
@@ -65,21 +65,21 @@ impl Subscriber {
         usize::MAX
     }
 
-    unsafe fn cast_handler<J: Job>(mut j: J) -> Box<dyn Job<ItemMessage = ()>> {
-        let r#box = Box::new(j) as Box<dyn Job<ItemMessage = <J as Job>::ItemMessage>>;
-        std::mem::transmute::<_, Box<dyn Job<ItemMessage = ()>>>(r#box)
+    unsafe fn cast_handler<J: Handler>(mut j: J) -> Box<dyn Handler<Event = ()>> {
+        let r#box = Box::new(j) as Box<dyn Handler<Event = <J as Handler>::Event>>;
+        std::mem::transmute::<_, Box<dyn Handler<Event = ()>>>(r#box)
     }
 
     pub fn run<M>(&mut self, message: M)
     where
-        M: Message,
+        M: Event,
         Self: Sized,
     {
         let message_name = std::any::type_name::<M>();
         if let Some(handlers) = self.handlers.get_mut(message_name) {
             handlers.iter_mut().for_each(|f| {
                 f.process(unsafe {
-                    (&message as *const dyn Message as *const ())
+                    (&message as *const dyn Event as *const ())
                         .as_ref()
                         .unwrap()
                 })
