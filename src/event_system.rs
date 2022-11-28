@@ -77,13 +77,8 @@ impl Subscriber {
     {
         let message_name = std::any::type_name::<M>();
         if let Some(handlers) = self.handlers.get_mut(message_name) {
-            handlers.iter_mut().for_each(|f| {
-                f.process(unsafe {
-                    (&message as *const dyn Event as *const ())
-                        .as_ref()
-                        .unwrap()
-                })
-            });
+            let msg = unsafe { std::mem::transmute::<_, &()>(&message) };
+            handlers.iter_mut().for_each(|f| f.process(msg));
         }
     }
 }
